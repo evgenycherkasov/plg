@@ -41,5 +41,6 @@ fi
 
 echo "Using: ${COMPOSE[*]}"
 "${COMPOSE[@]}" pull
-"${COMPOSE[@]}" up -d --remove-orphans
+# force-recreate so mounted configs (promtail/loki) are reloaded
+"${COMPOSE[@]}" up -d --remove-orphans --force-recreate
 "${COMPOSE[@]}" ps

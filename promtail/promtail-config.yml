@@ -15,9 +15,13 @@ scrape_configs:
       - host: unix:///var/run/docker.sock
         refresh_interval: 5s
     relabel_configs:
-      # do not scrape the PLG stack itself
+      # skip containers labeled logging.exclude=true (PLG stack)
+      - source_labels: ["__meta_docker_container_label_logging_exclude"]
+        regex: "true"
+        action: drop
+      # skip by explicit container names
       - source_labels: ["__meta_docker_container_name"]
-        regex: "/plg-(grafana|loki|promtail)"
+        regex: "/?plg-(grafana|loki|promtail)$"
         action: drop
       - source_labels: ["__meta_docker_container_name"]
         regex: "/(.*)"
@@ -36,5 +40,8 @@ scrape_configs:
         target_label: __path__
     pipeline_stages:
       - docker: {}
+      - match:
+          selector: '{container=~"plg-(grafana|loki|promtail)"}'
+          action: drop
       - labeldrop:
           - filename

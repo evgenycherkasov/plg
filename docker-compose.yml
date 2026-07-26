@@ -3,6 +3,8 @@ services:
     image: grafana/loki:3.4.2
     container_name: plg-loki
     restart: unless-stopped
+    labels:
+      logging.exclude: "true"
     command: -config.file=/etc/loki/loki-config.yml
     volumes:
       - ./loki/loki-config.yml:/etc/loki/loki-config.yml:ro
@@ -22,6 +24,8 @@ services:
     image: grafana/promtail:3.4.2
     container_name: plg-promtail
     restart: unless-stopped
+    labels:
+      logging.exclude: "true"
     command: -config.file=/etc/promtail/promtail-config.yml
     volumes:
       - ./promtail/promtail-config.yml:/etc/promtail/promtail-config.yml:ro
@@ -38,6 +42,8 @@ services:
     image: grafana/grafana:11.5.2
     container_name: plg-grafana
     restart: unless-stopped
+    labels:
+      logging.exclude: "true"
     environment:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
