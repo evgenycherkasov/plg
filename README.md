@@ -90,4 +90,4 @@ PasswordAuthentication yes
 
 ## Retention
 
-В `loki/loki-config.yml` срок хранения логов — **2 дня** (`retention_period: 48h`). Меняйте при необходимости.
+В `loki/loki-config.yml` срок хранения логов — **1 час** (`retention_period: 1h`). Меняйте при необходимости.
