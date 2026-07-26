@@ -29,9 +29,8 @@ jobs:
           password: ${{ secrets.SSH_PASSWORD }}
           port: ${{ secrets.SSH_PORT || 22 }}
           envs: DEPLOY_PATH
-          script_stop: true
+          # script_stop breaks multiline scripts (injects $? checks between every line)
           script: |
-            set -euo pipefail
             mkdir -p "$DEPLOY_PATH"
 
       - name: Upload stack files
@@ -41,7 +40,7 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }}
           password: ${{ secrets.SSH_PASSWORD }}
           port: ${{ secrets.SSH_PORT || 22 }}
-          source: "docker-compose.yml,loki/,promtail/,grafana/,.env.example"
+          source: "docker-compose.yml,loki/,promtail/,grafana/,scripts/,.env.example"
           target: ${{ secrets.DEPLOY_PATH }}
           overwrite: true
 
@@ -58,43 +57,7 @@ jobs:
           password: ${{ secrets.SSH_PASSWORD }}
           port: ${{ secrets.SSH_PORT || 22 }}
           envs: DEPLOY_PATH,GRAFANA_ADMIN_PASSWORD,GRAFANA_ADMIN_USER,GRAFANA_ROOT_URL
-          script_stop: true
           command_timeout: 15m
           script: |
-            set -euo pipefail
-            cd "$DEPLOY_PATH"
-
-            if [ ! -f .env ]; then
-              cp .env.example .env
-              echo "Created .env from .env.example — set GRAFANA_ADMIN_PASSWORD if needed"
-            fi
-
-            set_env_var() {
-              local key="$1"
-              local value="$2"
-              [ -z "$value" ] && return 0
-              if grep -q "^${key}=" .env; then
-                # portable in-place replace without leaking value into sed expression via shell expansion issues
-                awk -v k="$key" -v v="$value" 'BEGIN{FS=OFS="="} $1==k{$0=k"="v} {print}' .env > .env.tmp
-                mv .env.tmp .env
-              else
-                printf '%s=%s\n' "$key" "$value" >> .env
-              fi
-            }
-
-            set_env_var "GRAFANA_ADMIN_PASSWORD" "${GRAFANA_ADMIN_PASSWORD:-}"
-            set_env_var "GRAFANA_ADMIN_USER" "${GRAFANA_ADMIN_USER:-}"
-            set_env_var "GRAFANA_ROOT_URL" "${GRAFANA_ROOT_URL:-}"
-
-            if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
-              COMPOSE="docker compose"
-            elif command -v docker-compose >/dev/null 2>&1; then
-              COMPOSE="docker-compose"
-            else
-              echo "Docker Compose is not installed on the server"
-              exit 1
-            fi
-
-            $COMPOSE pull
-            $COMPOSE up -d --remove-orphans
-            $COMPOSE ps
+            chmod +x "$DEPLOY_PATH/scripts/deploy.sh"
+            bash "$DEPLOY_PATH/scripts/deploy.sh"
